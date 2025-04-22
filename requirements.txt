@@ -1,3 +1,4 @@
 Flask
 oandapyV20
 requests
+six
