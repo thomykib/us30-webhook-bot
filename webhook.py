@@ -42,3 +42,9 @@ def webhook():
         return jsonify({"status": "Sell order sent"})
 
     return jsonify({"status": "Unknown signal"})
+
+# 🟢 Required by Render to bind the port
+if __name__ == "__main__":
+    import os
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
