@@ -15,38 +15,49 @@ client = oandapyV20.API(access_token=OANDA_API_KEY)
 @app.route('/webhook', methods=['POST'])
 def webhook():
     try:
-        # Accept plain text body and parse manually
         raw_data = request.get_data(as_text=True)
         logging.info(f"Raw webhook received: {raw_data}")
 
-        # Convert raw JSON string into a Python dict
         data = json.loads(raw_data)
 
         signal = data.get('message', '').upper()
-        tp = data.get('tp')
-        sl = data.get('sl')
 
-        if signal in ['BUY_US30', 'SELL_US30']:
-            units = "1" if signal == "BUY_US30" else "-1"
+        if signal == 'BUY_US30':
             order_data = {
                 "order": {
                     "instrument": "US30_USD",
-                    "units": units,
+                    "units": "1",
                     "type": "MARKET",
                     "positionFill": "DEFAULT"
                 }
             }
 
-            if tp:
-                order_data["order"]["takeProfitOnFill"] = {"price": str(tp)}
-            if sl:
-                order_data["order"]["stopLossOnFill"] = {"price": str(sl)}
+        elif signal == 'SELL_US30':
+            order_data = {
+                "order": {
+                    "instrument": "US30_USD",
+                    "units": "-1",
+                    "type": "MARKET",
+                    "positionFill": "DEFAULT"
+                }
+            }
 
-            r = orders.OrderCreate(ACCOUNT_ID, data=order_data)
-            client.request(r)
-            return jsonify({"status": f"{signal} order sent", "tp": tp, "sl": sl})
+        elif signal == 'EXIT_US30':
+            order_data = {
+                "order": {
+                    "instrument": "US30_USD",
+                    "units": "0",
+                    "type": "MARKET",
+                    "positionFill": "CLOSE"
+                }
+            }
 
-        return jsonify({"status": "Unknown signal"}), 400
+        else:
+            return jsonify({"status": "Unknown signal"}), 400
+
+        r = orders.OrderCreate(ACCOUNT_ID, data=order_data)
+        client.request(r)
+        return jsonify({"status": f"{signal} order sent"})
 
     except Exception as e:
         logging.error(f"Webhook error: {e}")
